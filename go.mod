@@ -1,6 +1,6 @@
 module github.com/dlorenc/cosigned
 
-go 1.13
+go 1.16
 
 require (
 	k8s.io/api v0.17.2
