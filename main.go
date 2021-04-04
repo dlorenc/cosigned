@@ -18,10 +18,14 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/x509"
+	"encoding/pem"
 	"flag"
 	"net/http"
 	"os"
 
+	"github.com/dlorenc/cosigned/pkg/cosigned"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
@@ -90,16 +94,43 @@ type podValidator struct {
 	decoder *admission.Decoder
 }
 
+func config(ctx context.Context, c client.Client) corev1.ConfigMap {
+	obj := corev1.ConfigMap{}
+	if err := c.Get(ctx, client.ObjectKey{
+		Namespace: "cosigned-system",
+		Name:      "cosigned-config",
+	}, &obj); err != nil {
+		setupLog.Error(err, "getting configmap")
+	}
+	return obj
+}
+
 // podValidator admits a pod if a specific annotation exists.
 func (v *podValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	pod := &corev1.Pod{}
 
-	err := v.decoder.Decode(req, pod)
+	cfg := config(ctx, v.Client)
+
+	b, _ := pem.Decode([]byte(cfg.Data["key"]))
+
+	key, err := x509.ParsePKIXPublicKey(b.Bytes)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
+
+	setupLog.Info("got config", "cfg", cfg)
+	if err := v.decoder.Decode(req, pod); err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	for _, c := range pod.Spec.Containers {
+		_, err := cosigned.Signatures(ctx, c.Image, key.(*ecdsa.PublicKey))
+		if err != nil {
+			return admission.Denied("invalid signatures")
+		}
+	}
 	// Put your logic here
-	return admission.Denied("I said so")
+	return admission.Allowed("valid signatures!")
 }
 
 // podValidator implements admission.DecoderInjector.
