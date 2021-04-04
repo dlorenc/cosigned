@@ -24,3 +24,21 @@ webhooks:
     - UPDATE
     resources:
     - policies
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-v1-pod
+  failurePolicy: Ignore
+  name: vpod.kb.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
