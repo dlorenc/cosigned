@@ -11,24 +11,6 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-cosigned-sigstore-dev-v1-policy
-  failurePolicy: Fail
-  name: vpolicy.kb.io
-  rules:
-  - apiGroups:
-    - cosigned.sigstore.dev
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - policies
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: webhook-service
-      namespace: system
       path: /validate-v1-pod
   failurePolicy: Ignore
   name: vpod.kb.io
