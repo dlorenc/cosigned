@@ -98,6 +98,7 @@ func (v *podValidator) Handle(ctx context.Context, req admission.Request) admiss
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
+	// Put your logic here
 	return admission.Denied("I said so")
 }
 
