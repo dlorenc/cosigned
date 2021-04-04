@@ -24,10 +24,10 @@ spec:
     spec:
       containers:
       - command:
-        - /manager
+        - /ko-app/cosigned
         args:
         - --enable-leader-election
-        image: controller:latest
+        image: ko://github.com/dlorenc/cosigned
         name: manager
         resources:
           limits:
