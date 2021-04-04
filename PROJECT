@@ -1,0 +1,7 @@
+domain: sigstore.dev
+repo: github.com/dlorenc/cosigned
+resources:
+- group: cosigned
+  kind: Policy
+  version: v1
+version: "2"
