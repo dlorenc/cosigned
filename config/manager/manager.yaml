@@ -37,9 +37,3 @@ spec:
             cpu: 100m
             memory: 20Mi
       terminationGracePeriodSeconds: 10
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: config
-  namespace: system
