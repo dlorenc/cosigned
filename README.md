@@ -45,7 +45,7 @@ Pushing signature to: gcr.io/dlorenc-vmtest2/cosigned:sha256-fb607a5a85c963d8efe
 Upload the key:
 
 ```
-$ kubectl create configmap cosigned-config -n cosigned-system --dry-run -o=yaml --from-file=key=cosign.pub | kubectl apply -f -
+$ kubectl create configmap cosigned-config -n cosigned-system --dry-run -o=yaml --from-file=keys=cosign.pub | kubectl apply -f -
 ```
 
 Now run it:
@@ -55,3 +55,18 @@ $ kubectl run -it signed --image=$IMG
 If you don't see a command prompt, try pressing enter.
 / # 
 ```
+
+## Configuration
+
+Cosigned uses a single configmap for configuration right now.
+There is one field called `keys`, which contains a concatenated list of PKIX-formatted public keys to trust.
+All images must be signed by one of these keys to run in the cluster.
+
+You can create and update this with a command like this:
+
+```
+$ kubectl create configmap cosigned-config -n cosigned-system --dry-run -o=yaml --from-file=keys=cosign.pub | kubectl apply -f -
+```
+
+Enforcement is opt-in at the namespace-level.
+Namespaces with the label `cosigned=true` will be enforced.

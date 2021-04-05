@@ -19,10 +19,7 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
-	"crypto/x509"
-	"encoding/pem"
 	"flag"
-	"net/http"
 	"os"
 
 	"github.com/dlorenc/cosigned/pkg/cosigned"
@@ -94,47 +91,43 @@ type podValidator struct {
 	decoder *admission.Decoder
 }
 
-func config(ctx context.Context, c client.Client) *corev1.ConfigMap {
-	obj := &corev1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{
-		Namespace: "cosigned-system",
-		Name:      "cosigned-config",
-	}, obj); err != nil {
-		setupLog.Error(err, "getting configmap")
-	}
-	return obj
-}
-
 // podValidator admits a pod if a specific annotation exists.
 func (v *podValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	pod := &corev1.Pod{}
+	if err := v.decoder.Decode(req, pod); err != nil {
+		setupLog.Error(err, "decoding", "req", req)
+		return admission.Denied("error decoding")
+	}
 
-	cfg := config(ctx, v.Client)
+	cfg := cosigned.Config(ctx, v.Client)
 	if cfg == nil {
 		return admission.Denied("no keys configured")
 	}
-	b, _ := pem.Decode([]byte(cfg.Data["key"]))
-	if b == nil {
-		return admission.Denied("no keys configured")
-	}
-
-	key, err := x509.ParsePKIXPublicKey(b.Bytes)
-	if err != nil {
-		return admission.Errored(http.StatusBadRequest, err)
-	}
-
 	setupLog.Info("got config", "cfg", cfg)
-	if err := v.decoder.Decode(req, pod); err != nil {
-		return admission.Errored(http.StatusBadRequest, err)
-	}
 
+	keys := cosigned.Keys(cfg.Data)
+	setupLog.Info("got keys", "keys", keys)
 	for _, c := range pod.Spec.Containers {
-		_, err := cosigned.Signatures(ctx, c.Image, key.(*ecdsa.PublicKey))
-		if err != nil {
+		if !valid(ctx, c.Image, keys) {
 			return admission.Denied("invalid signatures")
 		}
 	}
 	return admission.Allowed("valid signatures!")
+}
+
+func valid(ctx context.Context, img string, keys []*ecdsa.PublicKey) bool {
+	for _, k := range keys {
+		sps, err := cosigned.Signatures(ctx, img, k)
+		if err != nil {
+			setupLog.Error(err, "checking signatures", "image", img)
+			return false
+		}
+		if len(sps) > 0 {
+			setupLog.Info("valid signatures", "image", img, "key", k)
+			return true
+		}
+	}
+	return false
 }
 
 // podValidator implements admission.DecoderInjector.
