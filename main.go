@@ -86,7 +86,7 @@ func main() {
 	}
 }
 
-// +kubebuilder:webhook:path=/validate-v1-pod,mutating=false,failurePolicy=ignore,groups="",resources=pods,verbs=create;update,versions=v1,name=vpod.kb.io
+// +kubebuilder:webhook:path=/validate-v1-pod,mutating=false,failurePolicy=ignore,groups="",resources=pods,verbs=create;update,versions=v1,name=cosigned.sigstore.dev
 
 // podValidator validates Pods
 type podValidator struct {

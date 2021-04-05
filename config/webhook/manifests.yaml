@@ -13,7 +13,7 @@ webhooks:
       namespace: system
       path: /validate-v1-pod
   failurePolicy: Ignore
-  name: vpod.kb.io
+  name: cosigned.sigstore.dev
   rules:
   - apiGroups:
     - ""

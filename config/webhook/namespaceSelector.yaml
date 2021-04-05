@@ -3,7 +3,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-webhook-configuration
 webhooks:
-- name: vpod.kb.io
+- name: cosigned.sigstore.dev
   namespaceSelector:
     matchLabels:
       cosigned: "true"

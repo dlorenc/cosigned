@@ -30,7 +30,7 @@ Grab a container and try to run it:
 $ IMG=$KO_DOCKER_REPO/demo
 $ crane cp --platform=linux/amd64 ubuntu $IMG
 $ kubectl run -it unsigned --image=$IMG
-Error from server (invalid signatures): admission webhook "vpod.kb.io" denied the request: invalid signatures
+Error from server (invalid signatures): admission webhook "cosigned.sigstore.dev" denied the request: invalid signatures
 ```
 
 Sign a container:
