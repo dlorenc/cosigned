@@ -2,6 +2,8 @@
 
 A Kubernetes admission controller to verify images have been signed by `cosign`!
 
+![intro](images/demo.gif)
+
 ## Installation
 
 ### Prereqs
