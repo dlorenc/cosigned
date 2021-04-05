@@ -94,12 +94,12 @@ type podValidator struct {
 	decoder *admission.Decoder
 }
 
-func config(ctx context.Context, c client.Client) corev1.ConfigMap {
-	obj := corev1.ConfigMap{}
+func config(ctx context.Context, c client.Client) *corev1.ConfigMap {
+	obj := &corev1.ConfigMap{}
 	if err := c.Get(ctx, client.ObjectKey{
 		Namespace: "cosigned-system",
 		Name:      "cosigned-config",
-	}, &obj); err != nil {
+	}, obj); err != nil {
 		setupLog.Error(err, "getting configmap")
 	}
 	return obj
@@ -110,8 +110,13 @@ func (v *podValidator) Handle(ctx context.Context, req admission.Request) admiss
 	pod := &corev1.Pod{}
 
 	cfg := config(ctx, v.Client)
-
+	if cfg == nil {
+		return admission.Denied("no keys configured")
+	}
 	b, _ := pem.Decode([]byte(cfg.Data["key"]))
+	if b == nil {
+		return admission.Denied("no keys configured")
+	}
 
 	key, err := x509.ParsePKIXPublicKey(b.Bytes)
 	if err != nil {
@@ -129,7 +134,6 @@ func (v *podValidator) Handle(ctx context.Context, req admission.Request) admiss
 			return admission.Denied("invalid signatures")
 		}
 	}
-	// Put your logic here
 	return admission.Allowed("valid signatures!")
 }
 
