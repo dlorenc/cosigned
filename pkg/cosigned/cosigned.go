@@ -2,10 +2,13 @@ package cosigned
 
 import (
 	"context"
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
 
+	"github.com/sigstore/cosign/cmd/cosign/cli"
+	"github.com/sigstore/sigstore/pkg/signature"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -24,11 +27,14 @@ func Signatures(ctx context.Context, img string, key *ecdsa.PublicKey) ([]cosign
 	if err != nil {
 		return nil, err
 	}
-	return cosign.Verify(ctx, ref, cosign.CheckOpts{
+
+	ecdsaVerifier := &signature.ECDSAVerifier{Key: key, HashAlg: crypto.SHA256}
+
+	return cosign.Verify(ctx, ref, &cosign.CheckOpts{
 		Roots:  fulcio.Roots,
-		PubKey: key,
+		PubKey: ecdsaVerifier,
 		Claims: true,
-	})
+	}, cli.TlogServer())
 }
 
 func Config(ctx context.Context, c client.Client) *corev1.ConfigMap {
