@@ -53,7 +53,7 @@ Sign a container:
 
 ```
 $ cosign generate-key-pair $SECRET_KEY_REF
-$ cosign sign -key k8s://default/mysecret $IMAGE
+$ cosign sign -key $SECRET_KEY_REF $IMAGE
 Enter password for private key:
 Pushing signature to: gcr.io/dlorenc-vmtest2/cosigned:sha256-fb607a5a85c963d8efe8f07b5935861aea06748f2a740617f672c6f75a35552e.cosign
 ```
