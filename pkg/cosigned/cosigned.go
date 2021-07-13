@@ -7,15 +7,11 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 
-	"github.com/sigstore/cosign/cmd/cosign/cli"
-	"github.com/sigstore/sigstore/pkg/signature"
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/sigstore/cosign/pkg/cosign"
 	"github.com/sigstore/cosign/pkg/cosign/fulcio"
+	"github.com/sigstore/sigstore/pkg/signature"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -28,35 +24,27 @@ func Signatures(ctx context.Context, img string, key *ecdsa.PublicKey) ([]cosign
 		return nil, err
 	}
 
-	ecdsaVerifier := &signature.ECDSAVerifier{Key: key, HashAlg: crypto.SHA256}
+	ecdsaVerifier, err := signature.LoadECDSAVerifier(key, crypto.SHA256)
+	if err != nil {
+		return nil, err
+	}
 
 	return cosign.Verify(ctx, ref, &cosign.CheckOpts{
-		Roots:  fulcio.Roots,
-		PubKey: ecdsaVerifier,
-		Claims: true,
-	}, cli.TlogServer())
+		RootCerts:   fulcio.Roots,
+		SigVerifier: ecdsaVerifier,
+		Claims:      true,
+	})
 }
 
-func Config(ctx context.Context, c client.Client) *corev1.ConfigMap {
-	obj := &corev1.ConfigMap{}
-	if err := c.Get(ctx, client.ObjectKey{
-		Namespace: "cosigned-system",
-		Name:      "cosigned-config",
-	}, obj); err != nil {
-		log.Error(err, "getting configmap")
-	}
-	return obj
-}
-
-func Keys(cfg map[string]string) []*ecdsa.PublicKey {
+func Keys(cfg map[string][]byte) []*ecdsa.PublicKey {
 	keys := []*ecdsa.PublicKey{}
 
-	pems := parsePems([]byte(cfg["keys"]))
+	pems := parsePems(cfg["cosign.pub"])
 	for _, p := range pems {
 		// TODO check header
 		key, err := x509.ParsePKIXPublicKey(p.Bytes)
 		if err != nil {
-			log.Error(err, "parsing key", "key", p)
+			log.Error(err, "parsing key", "cosign.pub", p)
 		}
 		keys = append(keys, key.(*ecdsa.PublicKey))
 	}

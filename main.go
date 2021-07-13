@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"github.com/dlorenc/cosigned/pkg/cosigned"
+	"github.com/sigstore/cosign/pkg/cosign/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
@@ -48,10 +49,13 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 }
 
+var secretKeyRef string
+
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&secretKeyRef, "secret-key-ref", "", "The secret that includes pub/private key pair")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -99,14 +103,18 @@ func (v *podValidator) Handle(ctx context.Context, req admission.Request) admiss
 		return admission.Denied("error decoding")
 	}
 
-	cfg := cosigned.Config(ctx, v.Client)
+	setupLog.Info("looking for secret", "secret", secretKeyRef)
+	cfg, err := kubernetes.GetKeyPairSecret(ctx, secretKeyRef)
+
+	if err != nil {
+		return admission.Denied(err.Error())
+	}
 	if cfg == nil {
 		return admission.Denied("no keys configured")
 	}
-	setupLog.Info("got config", "cfg", cfg)
 
 	keys := cosigned.Keys(cfg.Data)
-	setupLog.Info("got keys", "keys", keys)
+	setupLog.Info("got keys", "cosign.pub", keys)
 	for _, c := range pod.Spec.Containers {
 		if !valid(ctx, c.Image, keys) {
 			return admission.Denied("invalid signatures")

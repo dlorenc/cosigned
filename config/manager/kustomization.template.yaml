@@ -1,0 +1,16 @@
+resources:
+- manager.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: controller-manager
+    patch: |
+      - op: add
+        path: '/spec/template/spec/containers/0/env/-'
+        value:
+          name: SECRET_KEY_REF
+          value: "${SECRET_KEY_REF}"
