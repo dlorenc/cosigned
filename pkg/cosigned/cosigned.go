@@ -8,8 +8,8 @@ import (
 	"encoding/pem"
 
 	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/pkg/cosign"
-	"github.com/sigstore/cosign/pkg/cosign/fulcio"
 	"github.com/sigstore/sigstore/pkg/signature"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -30,9 +30,9 @@ func Signatures(ctx context.Context, img string, key *ecdsa.PublicKey) ([]cosign
 	}
 
 	return cosign.Verify(ctx, ref, &cosign.CheckOpts{
-		RootCerts:   fulcio.Roots,
-		SigVerifier: ecdsaVerifier,
-		Claims:      true,
+		RootCerts:     fulcio.Roots,
+		SigVerifier:   ecdsaVerifier,
+		ClaimVerifier: cosign.SimpleClaimVerifier,
 	})
 }
 
