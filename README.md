@@ -1,6 +1,7 @@
 # Cosigned
 
 ** THE CODE IN THIS REPO HAS BEEN MOVED TO THE OFFICIAL [COSIGN REPO](github.com/sigstore/cosign) **
+
 ** THIS IS ARCHIVED **
 
 A Kubernetes admission controller to verify images have been signed by `cosign`!
